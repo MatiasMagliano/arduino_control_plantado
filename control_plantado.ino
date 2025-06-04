@@ -12,10 +12,7 @@
 #include <DS3231.h>
 #include <avr/wdt.h>
 
-DS3231 rtc;
-bool century = false;
-bool h12Flag;
-bool pmFlag;
+DS3231 rtc(SDA, SCL);
 
 // Pines de salida
 const byte rele_4 = 2;
@@ -129,7 +126,9 @@ void checkSerialForTimeUpdate() {
     String input = Serial.readStringUntil('\n');
     int y, mo, d, h, mi, s;
     if (sscanf(input.c_str(), "%d-%d-%d %d:%d:%d", &y, &mo, &d, &h, &mi, &s) == 6) {
-      rtc.setClockDateTime(y, mo, d, h, mi, s);
+      rtc.setDOW(d); // El DOW no es esencial, se puede ajustar a parte si se desea
+      rtc.setTime(h, mi, s);
+      rtc.setDate(d, mo, y);
       Serial.println("RTC actualizado correctamente.");
     } else {
       Serial.println("Formato incorrecto. Usa: YYYY-MM-DD HH:MM:SS");
@@ -165,10 +164,10 @@ void loop() {
   wdt_reset();
   checkSerialForTimeUpdate();
 
-  int hora = rtc.getHour(h12Flag, pmFlag);
+  int hora = rtc.getHour(true);
   int minuto = rtc.getMinute();
   int segundo = rtc.getSecond();
-  int mes = rtc.getMonth(century);
+  int mes = rtc.getMonth();
 
   ajustarHorariosPorEstacion(mes);
   contadorMinutos = hora * 60 + minuto;

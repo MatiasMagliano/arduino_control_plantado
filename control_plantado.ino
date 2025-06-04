@@ -6,6 +6,10 @@
  * - Control de iluminación por canales (RGB + Crecimiento + Luna)
  * - Cambio de horarios estacionales cada tres meses
  * - WatchdogTimer con WDTO_1S
+ *
+ * Basado en la librería DS3231 de Seeed-Studio
+ * https://github.com/NorthernWidget/DS3231
+ * Licencia MIT
  */
 
 #include <Wire.h>
@@ -14,7 +18,6 @@
 
 DS3231 rtc(SDA, SCL);
 
-// Pines de salida
 const byte rele_4 = 2;
 const byte rele_3 = 3;
 const byte rele_2 = 7;
@@ -25,7 +28,6 @@ const byte canalAzul = 11;
 const byte canalCrecimiento = 5;
 const byte canalLuna = 6;
 
-// Horarios por estación
 struct HorariosEstacionales {
   int comienzoRojo;
   int comienzoVerde;
@@ -39,12 +41,11 @@ struct HorariosEstacionales {
   int netoLuna;
 };
 
-// Verano, Otoño, Invierno, Primavera
 HorariosEstacionales horarios[4] = {
-  {420, 435, 405, 510, 1230, 780, 765, 750, 450, 360},  // Verano
-  {450, 465, 435, 540, 1230, 750, 735, 720, 420, 360},  // Otoño
-  {480, 495, 465, 570, 1230, 720, 705, 690, 390, 360},  // Invierno
-  {435, 450, 420, 525, 1230, 765, 750, 735, 435, 360}   // Primavera
+  {420, 435, 405, 510, 1230, 780, 765, 750, 450, 360},
+  {450, 465, 435, 540, 1230, 750, 735, 720, 420, 360},
+  {480, 495, 465, 570, 1230, 720, 705, 690, 390, 360},
+  {435, 450, 420, 525, 1230, 765, 750, 735, 435, 360}
 };
 
 int comienzoCanalRojo, comienzoCanalVerde, comienzoCanalAzul, comienzoCanalCrecimiento, comienzoCanalLuna;
@@ -126,9 +127,9 @@ void checkSerialForTimeUpdate() {
     String input = Serial.readStringUntil('\n');
     int y, mo, d, h, mi, s;
     if (sscanf(input.c_str(), "%d-%d-%d %d:%d:%d", &y, &mo, &d, &h, &mi, &s) == 6) {
-      rtc.setDOW(d); // El DOW no es esencial, se puede ajustar a parte si se desea
-      rtc.setTime(h, mi, s);
-      rtc.setDate(d, mo, y);
+      rtc.setDOW(d);
+      rtc.setTime((uint8_t)h, (uint8_t)mi, (uint8_t)s);
+      rtc.setDate((uint8_t)d, (uint8_t)mo, (uint16_t)y);
       Serial.println("RTC actualizado correctamente.");
     } else {
       Serial.println("Formato incorrecto. Usa: YYYY-MM-DD HH:MM:SS");
